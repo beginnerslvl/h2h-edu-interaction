@@ -19,6 +19,13 @@ const Index = () => {
     height: window.innerHeight,
   });
 
+  // Calculate max users based on screen size
+  const calculateMaxUsers = () => {
+    const minPanelSize = 80; // Minimum size in pixels for a panel to show just the icon
+    const maxUsers = Math.floor((screenSize.width * screenSize.height) / (minPanelSize * minPanelSize));
+    return maxUsers;
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setScreenSize({
@@ -45,6 +52,12 @@ const Index = () => {
   }, []);
 
   const addUser = () => {
+    const maxUsers = calculateMaxUsers();
+    if (users.length >= maxUsers) {
+      toast("مزید صارفین نہیں شامل کر سکتے۔ اسکرین کی گنجائش مکمل ہے۔");
+      return;
+    }
+    
     const newUser: UserPanel = {
       id: users.length + 1,
       isActive: true,
@@ -62,24 +75,20 @@ const Index = () => {
     }
   };
 
-  const toggleSidebar = (userId: number) => {
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
-        user.id === userId
-          ? { ...user, sidebarOpen: !user.sidebarOpen }
-          : user
-      )
-    );
-  };
-
   const getGridLayout = () => {
     const userCount = users.length;
-    const cols = Math.ceil(Math.sqrt(userCount));
-    const rows = Math.ceil(userCount / cols);
+    const aspectRatio = screenSize.width / screenSize.height;
+    let cols = Math.ceil(Math.sqrt(userCount * aspectRatio));
+    let rows = Math.ceil(userCount / cols);
+    
+    // Adjust if we need more rows
+    if (rows * cols < userCount) {
+      cols = Math.ceil(userCount / rows);
+    }
     
     return {
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-      gridTemplateRows: `repeat(${rows}, 1fr)`,
+      gridTemplateColumns: `repeat(${cols}, minmax(80px, 1fr))`,
+      gridTemplateRows: `repeat(${rows}, minmax(80px, 1fr))`,
     };
   };
 
@@ -98,83 +107,68 @@ const Index = () => {
           
           <h1 className="text-2xl font-bold urdu">انسان سے انسان</h1>
           
-          <div className="flex items-center gap-2 flex-wrap">
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center">
-                <Mic className={`h-5 w-5 ${user.isActive ? 'animate-pulse-mic' : ''}`} />
-                <div className="flex space-x-1">
-                  {[1, 2, 3].map((_, i) => (
-                    <div
-                      key={i}
-                      className="mic-wave"
-                      style={{
-                        transform: `scaleY(${(user.audioLevel / 100) * 0.8 + 0.2})`,
-                      }}
-                    />
-                  ))}
+          {users.length === 0 ? (
+            <div className="text-sm">
+              <p className="urdu">اسکرین سائز: {screenSize.width}x{screenSize.height}</p>
+              <p className="urdu">زیادہ سے زیادہ صارفین: {calculateMaxUsers()}</p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center">
+                  <Mic className={`h-5 w-5 ${user.isActive ? 'animate-pulse-mic' : ''}`} />
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex h-[calc(100vh-4rem)]">
-        <div 
-          className="flex-1 p-4 grid gap-4"
-          style={getGridLayout()}
-        >
-          {users.map((user) => (
-            <Card
-              key={user.id}
-              className="flex flex-col relative bg-white/10 backdrop-blur-sm"
-            >
-              <div className="p-4 border-b flex justify-between items-center">
-                <h2 className="text-xl font-bold urdu">صارف {user.id}</h2>
-                <div className="flex items-center gap-2">
-                  <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500' : 'text-gray-400'}`} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleSidebar(user.id)}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex-1 p-4 flex items-center justify-center">
-                <User className="h-12 w-12 text-primary" />
-              </div>
-
-              {/* Audio Visualizer */}
-              <div className="absolute bottom-4 left-4 right-4">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-100"
-                    style={{ width: `${user.audioLevel}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Sidebar */}
-              {user.sidebarOpen && (
-                <div className="absolute right-0 top-0 h-full w-64 bg-white shadow-lg transform transition-transform">
-                  <div className="p-4">
-                    <h3 className="text-lg font-bold urdu mb-4">ترتیبات</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="urdu mb-2">آواز کی شدت</p>
-                        <input type="range" className="w-full" />
-                      </div>
-                    </div>
+        {users.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <h2 className="text-2xl font-bold urdu">خوش آمدید</h2>
+              <p className="urdu">نئے صارف کو شامل کرنے کے لیے نیچے دیئے گئے بٹن پر کلک کریں</p>
+            </div>
+          </div>
+        ) : (
+          <div 
+            className="flex-1 p-4 grid gap-4 transition-all duration-300"
+            style={getGridLayout()}
+          >
+            {users.map((user) => (
+              <Card
+                key={user.id}
+                className={`
+                  relative flex flex-col bg-white/10 backdrop-blur-sm
+                  transition-all duration-300
+                  ${user.audioLevel > 0 ? 'ring-2 ring-primary animate-pulse' : ''}
+                `}
+              >
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h2 className="text-xl font-bold urdu">صارف {user.id}</h2>
+                  <div className="flex items-center gap-2">
+                    <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500 animate-pulse' : 'text-gray-400'}`} />
                   </div>
                 </div>
-              )}
-            </Card>
-          ))}
-        </div>
+                
+                <div className="flex-1 p-4 flex items-center justify-center">
+                  <User className="h-12 w-12 text-primary" />
+                </div>
+
+                {/* Blinking Border Effect for Active Audio */}
+                <div 
+                  className={`
+                    absolute inset-0 pointer-events-none
+                    ${user.audioLevel > 0 ? 'border-2 border-primary animate-pulse' : ''}
+                  `}
+                />
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Controls */}
