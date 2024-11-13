@@ -50,6 +50,7 @@
 .mic-wave {
   @apply w-1 h-4 bg-primary mx-0.5 rounded-full;
   animation: wave 1s ease-in-out infinite;
+  transform-origin: bottom;
 }
 
 @keyframes wave {
