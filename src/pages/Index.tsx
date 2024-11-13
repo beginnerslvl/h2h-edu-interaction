@@ -94,7 +94,6 @@ const Index = () => {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
-      {/* Header */}
       <header className="h-16 bg-primary text-white shadow-lg">
         <div className="container h-full mx-auto flex justify-between items-center px-4">
           <Button
@@ -143,28 +142,20 @@ const Index = () => {
                 key={user.id}
                 className={`
                   relative flex flex-col bg-white/10 backdrop-blur-sm
-                  transition-all duration-300
-                  ${user.audioLevel > 0 ? 'ring-2 ring-primary animate-pulse' : ''}
+                  transition-all duration-300 border border-transparent
+                  ${user.audioLevel > 0 ? 'animate-neon-border' : ''}
                 `}
               >
                 <div className="p-4 border-b flex justify-between items-center">
                   <h2 className="text-xl font-bold urdu">صارف {user.id}</h2>
                   <div className="flex items-center gap-2">
-                    <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500 animate-pulse' : 'text-gray-400'}`} />
+                    <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500' : 'text-gray-400'}`} />
                   </div>
                 </div>
                 
                 <div className="flex-1 p-4 flex items-center justify-center">
                   <User className="h-12 w-12 text-primary" />
                 </div>
-
-                {/* Blinking Border Effect for Active Audio */}
-                <div 
-                  className={`
-                    absolute inset-0 pointer-events-none
-                    ${user.audioLevel > 0 ? 'border-2 border-primary animate-pulse' : ''}
-                  `}
-                />
               </Card>
             ))}
           </div>
