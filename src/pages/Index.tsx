@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mic, Settings, User } from "lucide-react";
+import { User, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 interface UserPanel {
@@ -20,16 +20,16 @@ const getGridLayout = (userCount: number, screenSize: { width: number, height: n
   let cols = Math.ceil(Math.sqrt(userCount * aspectRatio));
   let rows = Math.ceil(userCount / cols);
   
-  // Calculate panel size
-  const panelWidth = screenSize.width / cols;
-  const panelHeight = screenSize.height / rows;
+  // Calculate panel size based on available space and user count
+  const availableWidth = screenSize.width / cols;
+  const availableHeight = screenSize.height / rows;
   
   // Determine if we should show full panel or just icon
-  const showFullPanel = Math.min(panelWidth, panelHeight) >= minIconSize * 2;
+  const showFullPanel = Math.min(availableWidth, availableHeight) >= minIconSize * 2;
   
   const size = Math.min(
     maxPanelSize,
-    Math.max(minIconSize, Math.min(panelWidth, panelHeight))
+    Math.max(minIconSize, Math.min(availableWidth, availableHeight))
   );
   
   return {
@@ -39,12 +39,12 @@ const getGridLayout = (userCount: number, screenSize: { width: number, height: n
     justifyContent: 'center',
     alignContent: 'center',
     showFullPanel,
+    size,
   };
 };
 
 const Index = () => {
   const [users, setUsers] = useState<UserPanel[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [screenSize, setScreenSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight - 64, // Subtract header height
@@ -68,7 +68,7 @@ const Index = () => {
       setUsers(prevUsers =>
         prevUsers.map(user => ({
           ...user,
-          audioLevel: Math.random() * 100,
+          audioLevel: Math.random() > 0.5 ? 100 : 0,
         }))
       );
     }, 100);
@@ -78,7 +78,7 @@ const Index = () => {
   const addUser = () => {
     const maxUsers = Math.floor((screenSize.width * screenSize.height) / (60 * 60));
     if (users.length >= maxUsers) {
-      toast("مزید صارفین نہیں شامل کر سکتے۔ اسکرین کی گنجائش مکمل ہے۔");
+      toast("مزید صارفین نہیں شامل کر سکتے۔");
       return;
     }
     
@@ -99,6 +99,8 @@ const Index = () => {
     }
   };
 
+  const layout = getGridLayout(users.length, screenSize);
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
       <header className="h-16 bg-primary text-white shadow-lg">
@@ -106,7 +108,6 @@ const Index = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
             <Settings className="h-6 w-6" />
           </Button>
@@ -119,13 +120,7 @@ const Index = () => {
               <p className="urdu">زیادہ سے زیادہ صارفین: {Math.floor((screenSize.width * screenSize.height) / (60 * 60))}</p>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center">
-                  <Mic className={`h-5 w-5 ${user.isActive ? 'animate-pulse-mic' : ''}`} />
-                </div>
-              ))}
-            </div>
+            <div className="w-[100px]" /> {/* Spacer for layout balance */}
           )}
         </div>
       </header>
@@ -141,35 +136,26 @@ const Index = () => {
         ) : (
           <div 
             className="flex-1 p-4 grid transition-all duration-300"
-            style={getGridLayout(users.length, screenSize)}
+            style={layout}
           >
             {users.map((user) => (
               <Card
                 key={user.id}
                 className={`
-                  relative flex flex-col bg-white/10 backdrop-blur-sm
-                  transition-all duration-300 border border-transparent
-                  ${user.audioLevel > 0 ? 'animate-neon-border' : ''}
+                  relative flex items-center justify-center bg-white/10 backdrop-blur-sm
+                  transition-all duration-300 overflow-hidden
+                  ${user.audioLevel > 0 ? 'before:content-[""] before:absolute before:inset-0 before:p-[2px] before:rounded-lg before:bg-[conic-gradient(from_var(--angle),theme(colors.primary.DEFAULT)_0deg,transparent_120deg,theme(colors.primary.DEFAULT)_360deg)] before:animate-moving-border' : ''}
                 `}
+                style={{
+                  '--angle': '0deg',
+                } as React.CSSProperties}
               >
-                {getGridLayout(users.length, screenSize).showFullPanel ? (
-                  <>
-                    <div className="p-4 border-b flex justify-between items-center">
-                      <h2 className="text-xl font-bold urdu">صارف {user.id}</h2>
-                      <div className="flex items-center gap-2">
-                        <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500' : 'text-gray-400'}`} />
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1 p-4 flex items-center justify-center">
-                      <User className="h-12 w-12 text-primary" />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center">
+                <div className="absolute inset-[2px] rounded-lg bg-gray-900 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
                     <User className="h-8 w-8 text-primary" />
+                    <span className="text-white text-sm">{user.id}</span>
                   </div>
-                )}
+                </div>
               </Card>
             ))}
           </div>

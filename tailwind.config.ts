@@ -72,12 +72,21 @@ export default {
             "border-color": "rgba(0, 109, 119, 0)",
           }
         },
+        "moving-border": {
+          "0%": {
+            "--angle": "0deg",
+          },
+          "100%": {
+            "--angle": "360deg",
+          }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-mic": "pulse-mic 2s ease-in-out infinite",
         "neon-border": "neon-border 2s linear infinite",
+        "moving-border": "moving-border 2s linear infinite",
       },
     },
   },
