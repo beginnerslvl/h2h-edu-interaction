@@ -11,26 +11,50 @@ interface UserPanel {
   sidebarOpen: boolean;
 }
 
+const getGridLayout = (userCount: number, screenSize: { width: number, height: number }) => {
+  const minIconSize = 60; // Minimum size for just the icon
+  const maxPanelSize = 300; // Maximum size for a full panel
+  
+  // Calculate available space
+  const aspectRatio = screenSize.width / screenSize.height;
+  let cols = Math.ceil(Math.sqrt(userCount * aspectRatio));
+  let rows = Math.ceil(userCount / cols);
+  
+  // Calculate panel size
+  const panelWidth = screenSize.width / cols;
+  const panelHeight = screenSize.height / rows;
+  
+  // Determine if we should show full panel or just icon
+  const showFullPanel = Math.min(panelWidth, panelHeight) >= minIconSize * 2;
+  
+  const size = Math.min(
+    maxPanelSize,
+    Math.max(minIconSize, Math.min(panelWidth, panelHeight))
+  );
+  
+  return {
+    gridTemplateColumns: `repeat(${cols}, ${size}px)`,
+    gridTemplateRows: `repeat(${rows}, ${size}px)`,
+    gap: '4px',
+    justifyContent: 'center',
+    alignContent: 'center',
+    showFullPanel,
+  };
+};
+
 const Index = () => {
   const [users, setUsers] = useState<UserPanel[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [screenSize, setScreenSize] = useState({
     width: window.innerWidth,
-    height: window.innerHeight,
+    height: window.innerHeight - 64, // Subtract header height
   });
-
-  // Calculate max users based on screen size
-  const calculateMaxUsers = () => {
-    const minPanelSize = 80; // Minimum size in pixels for a panel to show just the icon
-    const maxUsers = Math.floor((screenSize.width * screenSize.height) / (minPanelSize * minPanelSize));
-    return maxUsers;
-  };
 
   useEffect(() => {
     const handleResize = () => {
       setScreenSize({
         width: window.innerWidth,
-        height: window.innerHeight,
+        height: window.innerHeight - 64,
       });
     };
 
@@ -52,7 +76,7 @@ const Index = () => {
   }, []);
 
   const addUser = () => {
-    const maxUsers = calculateMaxUsers();
+    const maxUsers = Math.floor((screenSize.width * screenSize.height) / (60 * 60));
     if (users.length >= maxUsers) {
       toast("مزید صارفین نہیں شامل کر سکتے۔ اسکرین کی گنجائش مکمل ہے۔");
       return;
@@ -75,23 +99,6 @@ const Index = () => {
     }
   };
 
-  const getGridLayout = () => {
-    const userCount = users.length;
-    const aspectRatio = screenSize.width / screenSize.height;
-    let cols = Math.ceil(Math.sqrt(userCount * aspectRatio));
-    let rows = Math.ceil(userCount / cols);
-    
-    // Adjust if we need more rows
-    if (rows * cols < userCount) {
-      cols = Math.ceil(userCount / rows);
-    }
-    
-    return {
-      gridTemplateColumns: `repeat(${cols}, minmax(80px, 1fr))`,
-      gridTemplateRows: `repeat(${rows}, minmax(80px, 1fr))`,
-    };
-  };
-
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
       <header className="h-16 bg-primary text-white shadow-lg">
@@ -109,7 +116,7 @@ const Index = () => {
           {users.length === 0 ? (
             <div className="text-sm">
               <p className="urdu">اسکرین سائز: {screenSize.width}x{screenSize.height}</p>
-              <p className="urdu">زیادہ سے زیادہ صارفین: {calculateMaxUsers()}</p>
+              <p className="urdu">زیادہ سے زیادہ صارفین: {Math.floor((screenSize.width * screenSize.height) / (60 * 60))}</p>
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -123,7 +130,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex h-[calc(100vh-4rem)]">
         {users.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
@@ -134,8 +140,8 @@ const Index = () => {
           </div>
         ) : (
           <div 
-            className="flex-1 p-4 grid gap-4 transition-all duration-300"
-            style={getGridLayout()}
+            className="flex-1 p-4 grid transition-all duration-300"
+            style={getGridLayout(users.length, screenSize)}
           >
             {users.map((user) => (
               <Card
@@ -146,16 +152,24 @@ const Index = () => {
                   ${user.audioLevel > 0 ? 'animate-neon-border' : ''}
                 `}
               >
-                <div className="p-4 border-b flex justify-between items-center">
-                  <h2 className="text-xl font-bold urdu">صارف {user.id}</h2>
-                  <div className="flex items-center gap-2">
-                    <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500' : 'text-gray-400'}`} />
+                {getGridLayout(users.length, screenSize).showFullPanel ? (
+                  <>
+                    <div className="p-4 border-b flex justify-between items-center">
+                      <h2 className="text-xl font-bold urdu">صارف {user.id}</h2>
+                      <div className="flex items-center gap-2">
+                        <Mic className={`h-5 w-5 ${user.isActive ? 'text-green-500' : 'text-gray-400'}`} />
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 p-4 flex items-center justify-center">
+                      <User className="h-12 w-12 text-primary" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <User className="h-8 w-8 text-primary" />
                   </div>
-                </div>
-                
-                <div className="flex-1 p-4 flex items-center justify-center">
-                  <User className="h-12 w-12 text-primary" />
-                </div>
+                )}
               </Card>
             ))}
           </div>
