@@ -120,7 +120,8 @@ const Index = () => {
               <p className="urdu">زیادہ سے زیادہ صارفین: {Math.floor((screenSize.width * screenSize.height) / (60 * 60))}</p>
             </div>
           ) : (
-            <div className="w-[100px]" /> {/* Spacer for layout balance */}
+            // Spacer for layout balance
+            <div className="w-[100px]" />
           )}
         </div>
       </header>
